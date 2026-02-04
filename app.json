@@ -13,7 +13,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "globalreadymobile",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
