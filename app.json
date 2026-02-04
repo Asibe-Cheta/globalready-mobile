@@ -1,23 +1,48 @@
 {
   "expo": {
-    "name": "globalready-mobile",
-    "slug": "globalready-mobile",
+    "name": "GlobalReady",
+    "slug": "globalready",
+    "extra": {
+      "eas": {
+        "projectId": "24bee49b-8cb4-4a4e-acf8-166ae28576d3"
+      },
+      "stripePublishableKey": "pk_live_51Sg0Zy8mTcYYuIULRL82DcD8Y9b2gINIcWE1iJFUpquLUdP97H2QG0xEHPmoCeg7127hN08K1ofDdXXJaFLukLMt00aXXRy7o1"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "globalreadymobile",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#101722",
+      "imageWidth": 200
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.globalready.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
+        "NSCameraUsageDescription": "We need camera access to scan documents",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#101722",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.globalready.app",
+      "versionCode": 1,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -33,12 +58,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#101722",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#101722"
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
