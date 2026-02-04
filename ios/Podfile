@@ -64,5 +64,17 @@ target 'GlobalReady' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Xcode 15+ / C++17: re-enable removed std::unary_function, std::binary_function, std::auto_ptr
+    # so RCT-Folly, Boost, etc. compile (EAS / local iOS build).
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= '$(inherited)'
+        defs = defs.is_a?(String) ? defs.split : defs.dup
+        defs << '_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION' unless defs.include?('_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION')
+        defs << '_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR' unless defs.include?('_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR')
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+      end
+    end
   end
 end
