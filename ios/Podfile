@@ -76,5 +76,17 @@ target 'GlobalReady' do
         config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
       end
     end
+
+    # EAS / New Arch: ensure all pod targets can find folly/synchronization/RelaxedAtomic.h
+    # (some transitive dependents miss RCT-Folly header path on EAS).
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        paths = config.build_settings['HEADER_SEARCH_PATHS'] ||= '$(inherited)'
+        paths = paths.is_a?(String) ? paths.split : paths.dup
+        folly_root = '"$(PODS_ROOT)/RCT-Folly"'
+        paths << folly_root unless paths.any? { |p| p.include?('RCT-Folly') }
+        config.build_settings['HEADER_SEARCH_PATHS'] = paths
+      end
+    end
   end
 end
