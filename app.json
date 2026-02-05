@@ -23,7 +23,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.globalready.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
         "NSCameraUsageDescription": "We need camera access to scan documents",
