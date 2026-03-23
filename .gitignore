@@ -41,3 +41,17 @@ app-example
 # generated native folders
 # /ios
 /android
+
+# secrets / local config
+.env
+.npmrc
+.claude/
+
+# call logs
+call*.json
+calls-export-*.json
+
+# nested project copy and screenshots
+globalready/
+globalready_screens
+globalready_stitch_screens/
