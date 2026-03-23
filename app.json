@@ -12,7 +12,7 @@
       "adzunaAppId": "92a48519",
       "adzunaAppKey": "a5df0b0336a7491a3ccf51290351e0d6"
     },
-    "version": "1.1.1",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/logo/global-logo.png",
     "scheme": "globalreadymobile",
@@ -50,7 +50,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.globalready.app",
-      "versionCode": 10,
+      "versionCode": 11,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
