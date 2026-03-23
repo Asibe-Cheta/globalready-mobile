@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Platform, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 
 import { GlobalBottomNav } from '@/components/GlobalBottomNav';
 import { AssessmentProvider } from '@/contexts/AssessmentContext';
@@ -62,6 +62,16 @@ function AppContent() {
 
     AsyncStorage.setItem('gr_last_route', pathname).catch(() => undefined);
   }, [pathname]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      Linking.getInitialURL().then(url => {
+        if (!url || url === 'globalreadymobile:///' || url === 'globalreadymobile://') {
+          router.replace('/');
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     registerForPushNotifications()
