@@ -6,13 +6,18 @@
       "eas": {
         "projectId": "24bee49b-8cb4-4a4e-acf8-166ae28576d3"
       },
-      "stripePublishableKey": "pk_live_51Sg0Zy8mTcYYuIULRL82DcD8Y9b2gINIcWE1iJFUpquLUdP97H2QG0xEHPmoCeg7127hN08K1ofDdXXJaFLukLMt00aXXRy7o1"
+      "stripePublishableKey": "pk_live_51Sg0Zy8mTcYYuIULRL82DcD8Y9b2gINIcWE1iJFUpquLUdP97H2QG0xEHPmoCeg7127hN08K1ofDdXXJaFLukLMt00aXXRy7o1",
+      "supabaseUrl": "https://bwgqzoplcgxguylerqsn.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z3F6b3BsY2d4Z3V5bGVycXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDUzMzksImV4cCI6MjA4NDY4MTMzOX0.SCTOORRM5C_O6WI8OspXbpryfDUubN_VBKry6YH1ffU",
+      "adzunaAppId": "92a48519",
+      "adzunaAppKey": "a5df0b0336a7491a3ccf51290351e0d6"
     },
-    "version": "1.0.0",
+    "version": "1.1.1",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logo/global-logo.png",
     "scheme": "globalreadymobile",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#101722",
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -23,22 +28,29 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.globalready.app",
-      "buildNumber": "4",
+      "usesAppleSignIn": true,
+      "backgroundColor": "#101722",
+      "buildNumber": "39",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
         "NSCameraUsageDescription": "We need camera access to scan documents",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSMicrophoneUsageDescription": "Microphone access is required for AI mock interviews",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "voip",
+          "audio"
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#101722",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "foregroundImage": "./assets/logo/global-logo.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.globalready.app",
-      "versionCode": 1,
+      "versionCode": 10,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
@@ -64,7 +76,25 @@
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-apple-authentication",
+      "expo-mail-composer",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/logo/global-logo.png",
+          "color": "#0d6cf2",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
