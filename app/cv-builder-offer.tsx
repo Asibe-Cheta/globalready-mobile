@@ -81,7 +81,7 @@ export default function CvBuilderOfferScreen() {
               </>
             ) : (
               <>
-                <Text style={styles.price}>$5</Text>
+                <Text style={styles.price}>€5</Text>
                 <Text style={styles.priceNote}>One-time payment</Text>
               </>
             )}

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,14 +16,25 @@ import {
 import { Screen } from '@/components/ui/screen';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { supabase } from '@/lib/supabase';
 import { JobMatch, jobMatchesService } from '@/services/supabase/job-matches';
 
 type Source = 'applied' | 'paste';
+
+const PRO_BENEFITS = [
+  { icon: 'psychology' as const, text: 'AI that analyses your unique communication style and adapts feedback to you' },
+  { icon: 'repeat' as const, text: 'Unlimited mock interviews — practice until you feel truly ready' },
+  { icon: 'insights' as const, text: 'Deep performance tracking: tone, clarity, confidence & structure' },
+  { icon: 'trending-up' as const, text: 'Watch your scores improve session by session with personalised guidance' },
+  { icon: 'auto-awesome' as const, text: 'Tailored coaching based on your CV, target role, and career goals' },
+];
 
 export default function InterviewPracticeScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
+  const { isPro } = useSubscription();
 
   const [appliedMatches, setAppliedMatches] = useState<JobMatch[]>([]);
   const [loadingApplied, setLoadingApplied] = useState(true);
@@ -31,10 +43,44 @@ export default function InterviewPracticeScreen() {
   const [pasteCompany, setPasteCompany] = useState('');
   const [pasteDescription, setPasteDescription] = useState('');
   const [source, setSource] = useState<Source>('applied');
+  const [freeSessionUsed, setFreeSessionUsed] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     loadAppliedMatches();
+    checkFreeSessionUsed();
   }, []);
+
+  const checkFreeSessionUsed = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('free_interview_used')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (data?.free_interview_used === true) setFreeSessionUsed(true);
+    } catch {
+      // column may not exist yet — default to allowing access
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
+
+  const markFreeSessionUsed = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from('profiles')
+        .update({ free_interview_used: true })
+        .eq('id', user.id);
+    } catch {
+      // non-critical — don't block the session
+    }
+  };
 
   const loadAppliedMatches = async () => {
     try {
@@ -48,7 +94,13 @@ export default function InterviewPracticeScreen() {
     }
   };
 
-  const handleStartPractice = () => {
+  const handleStartPractice = async () => {
+    // Gate: free users only get one session
+    if (!isPro && freeSessionUsed) {
+      setShowPaywall(true);
+      return;
+    }
+
     let jobTitle: string;
     let company: string;
     let description: string;
@@ -74,6 +126,12 @@ export default function InterviewPracticeScreen() {
       return;
     }
 
+    // Mark free session as used (fire before navigating)
+    if (!isPro && !freeSessionUsed) {
+      await markFreeSessionUsed();
+      setFreeSessionUsed(true);
+    }
+
     router.push({
       pathname: '/interview-prep',
       params: {
@@ -84,6 +142,16 @@ export default function InterviewPracticeScreen() {
       },
     });
   };
+
+  if (checkingAccess) {
+    return (
+      <Screen>
+        <View style={styles.centerLoader}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -107,6 +175,18 @@ export default function InterviewPracticeScreen() {
             <Text style={styles.heroSub}>
               Use an applied job or paste a description. The AI will ask role-specific questions and give you feedback.
             </Text>
+            {!isPro && !freeSessionUsed && (
+              <View style={styles.freeSessionBadge}>
+                <MaterialIcons name="stars" size={16} color="#f59e0b" />
+                <Text style={styles.freeSessionText}>You have 1 free session — make it count</Text>
+              </View>
+            )}
+            {!isPro && freeSessionUsed && (
+              <TouchableOpacity style={styles.proLockedBadge} onPress={() => setShowPaywall(true)}>
+                <MaterialIcons name="lock" size={16} color={colors.primary} />
+                <Text style={styles.proLockedText}>Pro required — tap to unlock unlimited sessions</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.tipBox}>
               <MaterialIcons name="touch-app" size={18} color={colors.primary} />
               <Text style={styles.tipText}>Tap a section below to choose your job or paste a description.</Text>
@@ -152,7 +232,7 @@ export default function InterviewPracticeScreen() {
             ) : appliedMatches.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>
-                  Mark jobs as “Applied” in Daily Matches to practice with them here.
+                  Mark jobs as "Applied" in Daily Matches to practice with them here.
                 </Text>
               </View>
             ) : (
@@ -163,10 +243,7 @@ export default function InterviewPracticeScreen() {
                   return (
                     <TouchableOpacity
                       key={match.id}
-                      style={[
-                        styles.jobCard,
-                        isSelected && styles.jobCardSelected,
-                      ]}
+                      style={[styles.jobCard, isSelected && styles.jobCardSelected]}
                       onPress={() => setSelectedAppliedMatch(match)}
                       accessibilityRole="button"
                     >
@@ -246,6 +323,59 @@ export default function InterviewPracticeScreen() {
           />
         </ScrollView>
       </View>
+
+      {/* Pro Paywall Modal */}
+      <Modal
+        visible={showPaywall}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaywall(false)}
+      >
+        <View style={styles.paywallOverlay}>
+          <View style={styles.paywallSheet}>
+            <View style={styles.paywallHandle} />
+
+            <View style={styles.paywallIconWrap}>
+              <MaterialIcons name="mic" size={32} color="#fff" />
+            </View>
+
+            <Text style={styles.paywallTitle}>You've used your free session</Text>
+            <Text style={styles.paywallSubtitle}>
+              You already gave it a go — now take it further. Pro members get unlimited practice, deeper feedback, and coaching that actually moves the needle.
+            </Text>
+
+            <View style={styles.paywallBenefits}>
+              {PRO_BENEFITS.map((b) => (
+                <View key={b.text} style={styles.paywallBenefitRow}>
+                  <View style={styles.paywallBenefitIcon}>
+                    <MaterialIcons name={b.icon} size={18} color={colors.primary} />
+                  </View>
+                  <Text style={styles.paywallBenefitText}>{b.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.paywallPriceRow}>
+              <Text style={styles.paywallPrice}>€9.99</Text>
+              <Text style={styles.paywallPricePer}>/month · cancel anytime</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.paywallCTA}
+              onPress={() => {
+                setShowPaywall(false);
+                router.push('/billing');
+              }}
+            >
+              <Text style={styles.paywallCTAText}>Unlock Pro</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.paywallDismiss} onPress={() => setShowPaywall(false)}>
+              <Text style={styles.paywallDismissText}>Maybe later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -253,6 +383,7 @@ export default function InterviewPracticeScreen() {
 const makeStyles = (c: AppColors) =>
   StyleSheet.create({
     container: { flex: 1 },
+    centerLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -284,12 +415,36 @@ const makeStyles = (c: AppColors) =>
       lineHeight: 20,
       paddingHorizontal: 8,
     },
+    freeSessionBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: 'rgba(245,158,11,0.12)',
+      borderRadius: 99,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderWidth: 1,
+      borderColor: 'rgba(245,158,11,0.3)',
+    },
+    freeSessionText: { color: '#f59e0b', fontSize: 13, fontWeight: '600' },
+    proLockedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: c.primary + '14',
+      borderRadius: 99,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderWidth: 1,
+      borderColor: c.primary + '40',
+    },
+    proLockedText: { color: c.primary, fontSize: 13, fontWeight: '600' },
     tipBox: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      marginTop: 12,
+      marginTop: 4,
       paddingVertical: 10,
       paddingHorizontal: 14,
       backgroundColor: c.primary + '14',
@@ -297,12 +452,7 @@ const makeStyles = (c: AppColors) =>
       borderWidth: 1,
       borderColor: c.primary + '30',
     },
-    tipText: {
-      color: c.primary,
-      fontSize: 13,
-      fontWeight: '600',
-      flex: 1,
-    },
+    tipText: { color: c.primary, fontSize: 13, fontWeight: '600', flex: 1 },
     section: { marginBottom: 20 },
     sectionHeaderTouchable: {
       padding: 14,
@@ -320,12 +470,7 @@ const makeStyles = (c: AppColors) =>
     sectionChevron: { marginLeft: 'auto' },
     sectionTitle: { color: c.textSecondary, fontSize: 16, fontWeight: '700', flex: 1 },
     sectionTitleActive: { color: c.primary },
-    sectionHint: {
-      color: c.textSecondary,
-      fontSize: 12,
-      marginTop: 6,
-      marginLeft: 28,
-    },
+    sectionHint: { color: c.textSecondary, fontSize: 12, marginTop: 6, marginLeft: 28 },
     loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
     loadingText: { color: c.textSecondary, fontSize: 14 },
     emptyBox: {
@@ -346,10 +491,7 @@ const makeStyles = (c: AppColors) =>
       borderWidth: 1.5,
       borderColor: c.borderSoft,
     },
-    jobCardSelected: {
-      borderColor: c.primary,
-      backgroundColor: c.primary + '0c',
-    },
+    jobCardSelected: { borderColor: c.primary, backgroundColor: c.primary + '0c' },
     jobCardContent: { flex: 1 },
     jobCardTitle: { color: c.textPrimary, fontSize: 15, fontWeight: '600' },
     jobCardCompany: { color: c.textSecondary, fontSize: 13, marginTop: 2 },
@@ -365,9 +507,88 @@ const makeStyles = (c: AppColors) =>
       fontSize: 15,
       marginBottom: 10,
     },
-    textArea: {
-      minHeight: 120,
-      textAlignVertical: 'top',
-    },
+    textArea: { minHeight: 120, textAlignVertical: 'top' },
     startButton: { marginTop: 8, marginBottom: 24 },
+    // Paywall
+    paywallOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'flex-end',
+    },
+    paywallSheet: {
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 40,
+      alignItems: 'center',
+    },
+    paywallHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.border,
+      marginBottom: 24,
+    },
+    paywallIconWrap: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+    paywallTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: c.textPrimary,
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+    paywallSubtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      textAlign: 'center',
+      lineHeight: 21,
+      marginBottom: 24,
+      paddingHorizontal: 4,
+    },
+    paywallBenefits: { width: '100%', gap: 14, marginBottom: 28 },
+    paywallBenefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    paywallBenefitIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: c.primary + '18',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    paywallBenefitText: {
+      flex: 1,
+      fontSize: 14,
+      color: c.textPrimary,
+      lineHeight: 20,
+    },
+    paywallPriceRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 4,
+      marginBottom: 20,
+    },
+    paywallPrice: { fontSize: 32, fontWeight: '800', color: c.primary },
+    paywallPricePer: { fontSize: 14, color: c.textSecondary },
+    paywallCTA: {
+      width: '100%',
+      backgroundColor: c.primary,
+      borderRadius: 999,
+      paddingVertical: 16,
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    paywallCTAText: { fontSize: 17, fontWeight: '700', color: '#fff' },
+    paywallDismiss: { paddingVertical: 8 },
+    paywallDismissText: { fontSize: 14, color: c.textSecondary },
   });

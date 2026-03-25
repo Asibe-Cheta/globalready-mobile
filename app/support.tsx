@@ -39,7 +39,7 @@ export default function SupportScreen() {
 
             <FAQItem
               question="How much does it cost?"
-              answer="CV Builder and CV Tailoring are both $5. Jobs browsing and assessment are free."
+              answer="CV Builder and CV Tailoring are both €5. Jobs browsing and assessment are free."
               colors={colors}
             />
 

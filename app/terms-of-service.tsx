@@ -29,7 +29,7 @@ export default function TermsOfServiceScreen() {
             GlobalReady provides:
           </Text>
           <Text style={styles.bulletPoint}>
-            • CV building and tailoring services ($5 per service)
+            • CV building and tailoring services (€5 per service)
           </Text>
           <Text style={styles.bulletPoint}>
             • Job listings and search functionality
@@ -57,7 +57,7 @@ export default function TermsOfServiceScreen() {
 
           <Text style={styles.sectionTitle}>4. Payment Terms</Text>
           <Text style={styles.paragraph}>
-            • Services are charged at $5 USD per transaction
+            • Services are charged at €5 EUR per transaction
           </Text>
           <Text style={styles.paragraph}>
             • Payments are processed securely through Stripe

@@ -252,7 +252,7 @@ export default function TailoredCvPreviewScreen() {
           ) : (
             <>
               <PrimaryButton
-                label={isTailoringMode ? 'Download Tailored CV – $5' : 'Download Generated CV – $5'}
+                label={isTailoringMode ? 'Download Tailored CV – €5' : 'Download Generated CV – €5'}
                 onPress={() =>
                   router.push({
                     pathname: '/complete-purchase',

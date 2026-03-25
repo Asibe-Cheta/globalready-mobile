@@ -28,7 +28,7 @@ export default function CompletePurchaseScreen() {
 
   // Get params with defaults
   const cvId = (params.cvId as string) || '';
-  const amount = parseInt(params.amount as string) || 500; // Default $5
+  const amount = parseInt(params.amount as string) || 500; // Default €5 (in cents)
   const jobDescription = params.jobDescription as string;
   const serviceType = (params.serviceType as string) || 'cv_tailoring';
 
@@ -115,7 +115,7 @@ export default function CompletePurchaseScreen() {
               data: {
                 email: user.email,
                 amount,
-                currency: 'USD',
+                currency: 'EUR',
                 payment_method: 'stripe',
                 reference: sessionId,
                 service: serviceType === 'cv_tailoring' ? 'CV Tailoring' : 'CV Export',
@@ -247,9 +247,9 @@ export default function CompletePurchaseScreen() {
               <Text style={styles.summarySubtitle}>Global standard format</Text>
               <View style={styles.priceRow}>
                 <View style={styles.pricePill}>
-                  <Text style={styles.pricePillText}>${(amount / 100).toFixed(2)}</Text>
+                  <Text style={styles.pricePillText}>€{(amount / 100).toFixed(2)}</Text>
                 </View>
-                <Text style={styles.priceStrike}>$15.00</Text>
+                <Text style={styles.priceStrike}>€15.00</Text>
               </View>
             </View>
             <View style={styles.summaryImage} />
@@ -281,7 +281,7 @@ export default function CompletePurchaseScreen() {
             </Text>
           </View>
           <PrimaryButton
-            label={loading ? 'Processing...' : `Pay $${(amount / 100).toFixed(2)} & ${serviceType === 'cv_tailoring' ? 'Download' : 'Continue'}`}
+            label={loading ? 'Processing...' : `Pay €${(amount / 100).toFixed(2)} & ${serviceType === 'cv_tailoring' ? 'Download' : 'Continue'}`}
             icon={loading ? undefined : 'arrow-forward'}
             onPress={handlePayment}
             disabled={loading}

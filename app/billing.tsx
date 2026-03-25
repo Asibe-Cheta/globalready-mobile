@@ -75,7 +75,7 @@ function formatDate(iso: string | null): string {
 
 const PRO_FEATURES = [
   'Unlimited CV downloads',
-  'Unlimited AI tailoring (no $5 fee)',
+  'Unlimited AI tailoring (no €5 fee)',
   'Unlimited AI job-fit checks',
   'Full job listing links',
   'Cancel anytime',

@@ -44,7 +44,7 @@ function PathCard({ title, icon, iconBg, accent, onPress, cardBorderColor, cardB
 }
 
 export default function LandingScreen() {
-  const { colors } = useAppTheme();
+  const { colors, isDark, toggleTheme } = useAppTheme();
   const styles = makeStyles(colors);
   const router = useRouter();
   const [workAbroadRoute, setWorkAbroadRoute] = useState<string | null>(null);
@@ -94,6 +94,15 @@ export default function LandingScreen() {
           <View style={styles.glowTop} />
           <View style={styles.glowBottom} />
         </View>
+
+        <TouchableOpacity
+          style={styles.themeToggleButton}
+          onPress={toggleTheme}
+          accessibilityRole="button"
+          accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <MaterialIcons name={isDark ? 'wb-sunny' : 'nightlight-round'} size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.profileButton}
@@ -240,6 +249,19 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     borderColor: c.navBorder,
     backgroundColor: 'rgba(255,255,255,0.04)',
     marginBottom: theme.spacing.lg,
+  },
+  themeToggleButton: {
+    position: 'absolute',
+    top: 14,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.navBorder,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   profileButton: {
     position: 'absolute',
