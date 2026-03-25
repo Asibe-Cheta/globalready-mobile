@@ -25,6 +25,104 @@ const PAGE_SIZE = 20;
 
 type Tab = 'all' | 'remote' | 'sponsor' | 'global';
 
+type ListHeaderProps = {
+  styles: ReturnType<typeof makeStyles>;
+  colors: AppColors;
+  query: string;
+  onQueryChange: (q: string) => void;
+  activeTab: Tab;
+  onTabChange: (t: Tab) => void;
+  selectedCountry: string;
+  selectedSector: string;
+  onSectorChange: (s: string) => void;
+  onOpenCountryPicker: () => void;
+  activeCountry: typeof ADZUNA_COUNTRIES[number] | undefined;
+  total: number;
+  loading: boolean;
+  router: ReturnType<typeof useRouter>;
+};
+
+const ListHeader = React.memo(function ListHeader({
+  styles, colors, query, onQueryChange, activeTab, onTabChange,
+  selectedCountry, selectedSector, onSectorChange, onOpenCountryPicker,
+  activeCountry, total, loading, router,
+}: ListHeaderProps) {
+  return (
+    <View>
+      <View style={styles.searchWrapper}>
+        <MaterialIcons name="search" size={20} color="#94a3b8" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search roles, skills, or companies..."
+          placeholderTextColor={colors.inputPlaceholder}
+          value={query}
+          onChangeText={onQueryChange}
+        />
+        {query ? (
+          <TouchableOpacity onPress={() => onQueryChange('')}>
+            <MaterialIcons name="close" size={18} color="#6b7280" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {activeTab === 'global' ? (
+        <View style={styles.countrySelector}>
+          <Text style={styles.countrySelectorFlag}>🌐</Text>
+          <Text style={styles.countrySelectorLabel}>Worldwide</Text>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.countrySelector} onPress={onOpenCountryPicker}>
+          <Text style={styles.countrySelectorFlag}>{activeCountry?.flag}</Text>
+          <Text style={styles.countrySelectorLabel}>{activeCountry?.label}</Text>
+          <MaterialIcons name="keyboard-arrow-down" size={18} color="#94a3b8" />
+        </TouchableOpacity>
+      )}
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabScroll}
+        contentContainerStyle={styles.tabRow}
+      >
+        {(['all', 'remote', 'sponsor', 'global'] as Tab[]).map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tabChip, activeTab === tab && styles.tabChipActive]}
+            onPress={() => onTabChange(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab === 'all' ? 'All Jobs' : tab === 'remote' ? 'Remote' : tab === 'sponsor' ? 'Sponsorship' : 'Global Remote'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.sectorScroll}
+        contentContainerStyle={styles.sectorScrollContent}
+      >
+        {SECTORS.map(s => (
+          <TouchableOpacity
+            key={s.value}
+            style={[styles.sectorChip, selectedSector === s.value && styles.sectorChipActive]}
+            onPress={() => onSectorChange(s.value)}
+          >
+            <Text style={[styles.sectorText, selectedSector === s.value && styles.sectorTextActive]}>
+              {s.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {total > 0 && !loading && (
+        <Text style={styles.resultCount}>{total.toLocaleString()} jobs found</Text>
+      )}
+    </View>
+  );
+});
+
 const SECTORS = [
   { label: 'All Sectors', value: '' },
   { label: 'IT & Tech', value: 'it-jobs' },
@@ -143,6 +241,23 @@ export default function JobsFeedScreen() {
 
   const activeCountry = ADZUNA_COUNTRIES.find(c => c.code === selectedCountry);
 
+  const listHeaderProps: ListHeaderProps = {
+    styles,
+    colors,
+    query,
+    onQueryChange: setQuery,
+    activeTab,
+    onTabChange: setActiveTab,
+    selectedCountry,
+    selectedSector,
+    onSectorChange: setSelectedSector,
+    onOpenCountryPicker: () => setShowCountryPicker(true),
+    activeCountry,
+    total,
+    loading,
+    router,
+  };
+
   const CountryPicker = () => (
     <TouchableOpacity style={styles.pickerOverlay} activeOpacity={1} onPress={() => setShowCountryPicker(false)}>
       <TouchableOpacity style={styles.pickerSheet} activeOpacity={1} onPress={e => e.stopPropagation()}>
@@ -177,83 +292,6 @@ export default function JobsFeedScreen() {
         </ScrollView>
       </TouchableOpacity>
     </TouchableOpacity>
-  );
-
-  const ListHeader = () => (
-    <View>
-      <View style={styles.searchWrapper}>
-        <MaterialIcons name="search" size={20} color="#94a3b8" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search roles, skills, or companies..."
-          placeholderTextColor={colors.inputPlaceholder}
-          value={query}
-          onChangeText={setQuery}
-        />
-        {query ? (
-          <TouchableOpacity onPress={() => setQuery('')}>
-            <MaterialIcons name="close" size={18} color="#6b7280" />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      {/* Country selector (hidden when Global Remote; show Worldwide) */}
-      {activeTab === 'global' ? (
-        <View style={styles.countrySelector}>
-          <Text style={styles.countrySelectorFlag}>🌐</Text>
-          <Text style={styles.countrySelectorLabel}>Worldwide</Text>
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.countrySelector} onPress={() => setShowCountryPicker(true)}>
-          <Text style={styles.countrySelectorFlag}>{activeCountry?.flag}</Text>
-          <Text style={styles.countrySelectorLabel}>{activeCountry?.label}</Text>
-          <MaterialIcons name="keyboard-arrow-down" size={18} color="#94a3b8" />
-        </TouchableOpacity>
-      )}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabScroll}
-        contentContainerStyle={styles.tabRow}
-      >
-        {(['all', 'remote', 'sponsor', 'global'] as Tab[]).map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tabChip, activeTab === tab && styles.tabChipActive]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'all' ? 'All Jobs' : tab === 'remote' ? 'Remote' : tab === 'sponsor' ? 'Sponsorship' : 'Global Remote'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Sector filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.sectorScroll}
-        contentContainerStyle={styles.sectorScrollContent}
-      >
-        {SECTORS.map(s => (
-          <TouchableOpacity
-            key={s.value}
-            style={[styles.sectorChip, selectedSector === s.value && styles.sectorChipActive]}
-            onPress={() => setSelectedSector(s.value)}
-          >
-            <Text style={[styles.sectorText, selectedSector === s.value && styles.sectorTextActive]}>
-              {s.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {total > 0 && !loading && (
-        <Text style={styles.resultCount}>{total.toLocaleString()} jobs found</Text>
-      )}
-    </View>
   );
 
   const ListEmpty = () => {
@@ -312,12 +350,13 @@ export default function JobsFeedScreen() {
             data={jobs}
             renderItem={({ item }) => <JobCard job={item} onPress={() => handleJobPress(item)} />}
             keyExtractor={(item) => item.id}
-            ListHeaderComponent={ListHeader}
+            ListHeaderComponent={<ListHeader {...listHeaderProps} />}
             ListEmptyComponent={ListEmpty}
             ListFooterComponent={ListFooter}
             onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
             contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
             }
