@@ -30,7 +30,7 @@
       "bundleIdentifier": "com.globalready.app",
       "usesAppleSignIn": true,
       "backgroundColor": "#101722",
-      "buildNumber": "39",
+      "buildNumber": "40",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
         "NSCameraUsageDescription": "We need camera access to scan documents",
@@ -50,7 +50,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.globalready.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
