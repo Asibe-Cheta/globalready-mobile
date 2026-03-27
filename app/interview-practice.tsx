@@ -13,12 +13,16 @@ import {
   View,
 } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Screen } from '@/components/ui/screen';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/lib/supabase';
 import { JobMatch, jobMatchesService } from '@/services/supabase/job-matches';
+
+const FREE_INTERVIEW_KEY = 'gr_free_interview_used';
 
 type Source = 'applied' | 'paste';
 
@@ -54,6 +58,14 @@ export default function InterviewPracticeScreen() {
 
   const checkFreeSessionUsed = async () => {
     try {
+      // Check AsyncStorage first (works even before DB migration is run)
+      const local = await AsyncStorage.getItem(FREE_INTERVIEW_KEY);
+      if (local === 'true') {
+        setFreeSessionUsed(true);
+        setCheckingAccess(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
@@ -61,15 +73,21 @@ export default function InterviewPracticeScreen() {
         .select('free_interview_used')
         .eq('id', user.id)
         .maybeSingle();
-      if (data?.free_interview_used === true) setFreeSessionUsed(true);
+      if (data?.free_interview_used === true) {
+        setFreeSessionUsed(true);
+        // Sync to local so future checks don't need the DB
+        await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true');
+      }
     } catch {
-      // column may not exist yet — default to allowing access
+      // DB unavailable — local AsyncStorage is the fallback
     } finally {
       setCheckingAccess(false);
     }
   };
 
   const markFreeSessionUsed = async () => {
+    // Persist locally first so the gate holds even if DB write fails
+    await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true').catch(() => undefined);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -78,7 +96,7 @@ export default function InterviewPracticeScreen() {
         .update({ free_interview_used: true })
         .eq('id', user.id);
     } catch {
-      // non-critical — don't block the session
+      // non-critical — local flag already set
     }
   };
 
