@@ -12,7 +12,7 @@
       "adzunaAppId": "92a48519",
       "adzunaAppKey": "a5df0b0336a7491a3ccf51290351e0d6"
     },
-    "version": "1.1.2",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo/global-logo.png",
     "scheme": "globalreadymobile",
@@ -30,7 +30,7 @@
       "bundleIdentifier": "com.globalready.app",
       "usesAppleSignIn": true,
       "backgroundColor": "#101722",
-      "buildNumber": "49",
+      "buildNumber": "50",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
         "NSCameraUsageDescription": "We need camera access to scan documents",
