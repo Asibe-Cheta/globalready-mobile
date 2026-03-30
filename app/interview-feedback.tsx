@@ -145,7 +145,7 @@ export default function InterviewFeedbackScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={() => router.replace('/profile')}>
-            <MaterialIcons name="close" size={22} color="#fff" />
+            <MaterialIcons name="close" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Interview Feedback</Text>
           <View style={{ width: 40 }} />
@@ -247,10 +247,7 @@ export default function InterviewFeedbackScreen() {
           <View style={styles.actions}>
             <TouchableOpacity
               style={styles.practiceAgainBtn}
-              onPress={() => router.replace({
-                pathname: '/interview-prep',
-                params: { jobTitle: params.jobTitle, company: params.company },
-              })}
+              onPress={() => router.replace('/interview-practice')}
             >
               <MaterialIcons name="replay" size={18} color={colors.primary} />
               <Text style={styles.practiceAgainText}>Practice Again</Text>
@@ -281,7 +278,7 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, height: 56,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 1, borderBottomColor: c.navBorder,
   },
   iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: c.textPrimary, fontSize: 18, fontWeight: '700' },
@@ -295,18 +292,18 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.navBorder,
     padding: 16, marginBottom: 20,
   },
-  summaryText: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 22 },
+  summaryText: { color: c.textSecondary, fontSize: 14, lineHeight: 22 },
   section: { marginBottom: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionTitle: { color: c.textPrimary, fontSize: 16, fontWeight: '700' },
   strengthRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
   strengthDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ade80', marginTop: 7, flexShrink: 0 },
-  strengthText: { flex: 1, color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 20 },
+  strengthText: { flex: 1, color: c.textSecondary, fontSize: 13, lineHeight: 20 },
   improvementRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
-  improvementText: { flex: 1, color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 20 },
+  improvementText: { flex: 1, color: c.textSecondary, fontSize: 13, lineHeight: 20 },
   qCard: {
-    backgroundColor: '#111827', borderRadius: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: c.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: c.borderSoft,
     padding: 12, marginBottom: 8,
   },
   qHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -314,7 +311,7 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
   qText: { flex: 1, color: c.textPrimary, fontSize: 13, fontWeight: '600' },
   qScore: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   qScoreText: { fontSize: 12, fontWeight: '800' },
-  qFeedback: { color: c.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
+  qFeedback: { color: c.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.borderSoft },
   practiceCard: {
     backgroundColor: 'rgba(13,108,242,0.06)',
     borderWidth: 1, borderColor: 'rgba(13,108,242,0.15)',
@@ -327,7 +324,7 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     color: c.primary, fontSize: 11, fontWeight: '800',
     textAlign: 'center', lineHeight: 22, flexShrink: 0,
   },
-  practiceText: { flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 20 },
+  practiceText: { flex: 1, color: c.textSecondary, fontSize: 13, lineHeight: 20 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   practiceAgainBtn: {
     flex: 1, height: 50, borderRadius: 14,

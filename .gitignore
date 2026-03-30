@@ -52,6 +52,6 @@ call*.json
 calls-export-*.json
 
 # nested project copy and screenshots
-globalready/
+/globalready/
 globalready_screens
 globalready_stitch_screens/

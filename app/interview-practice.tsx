@@ -58,7 +58,7 @@ export default function InterviewPracticeScreen() {
 
   const checkFreeSessionUsed = async () => {
     try {
-      // Check AsyncStorage first (works even before DB migration is run)
+      // Fast local check first — set after first DB confirmation
       const local = await AsyncStorage.getItem(FREE_INTERVIEW_KEY);
       if (local === 'true') {
         setFreeSessionUsed(true);
@@ -68,35 +68,23 @@ export default function InterviewPracticeScreen() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('free_interview_used')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (data?.free_interview_used === true) {
+
+      // Count completed sessions — authoritative source.
+      // analyze-interview edge function inserts a row on session completion.
+      const { count } = await supabase
+        .from('interview_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if ((count ?? 0) >= 1) {
         setFreeSessionUsed(true);
-        // Sync to local so future checks don't need the DB
+        // Cache locally so future checks are instant
         await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true');
       }
     } catch {
-      // DB unavailable — local AsyncStorage is the fallback
+      // DB unavailable — AsyncStorage fallback only
     } finally {
       setCheckingAccess(false);
-    }
-  };
-
-  const markFreeSessionUsed = async () => {
-    // Persist locally first so the gate holds even if DB write fails
-    await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true').catch(() => undefined);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase
-        .from('profiles')
-        .update({ free_interview_used: true })
-        .eq('id', user.id);
-    } catch {
-      // non-critical — local flag already set
     }
   };
 
@@ -142,12 +130,6 @@ export default function InterviewPracticeScreen() {
         Alert.alert('Paste a description', 'Enter at least the job description to practice.');
       }
       return;
-    }
-
-    // Mark free session as used (fire before navigating)
-    if (!isPro && !freeSessionUsed) {
-      await markFreeSessionUsed();
-      setFreeSessionUsed(true);
     }
 
     router.push({

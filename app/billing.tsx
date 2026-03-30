@@ -130,13 +130,18 @@ export default function BillingScreen() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to start checkout');
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, 'globalreadymobile://');
-      // On Android, Chrome Custom Tabs don't intercept custom scheme redirects —
-      // the OS fires an Intent that re-opens the app, so result.type is never 'success'.
-      // The Stripe webhook will have updated the DB by the time the user returns,
-      // so we refresh regardless of result type (safe on both platforms).
-      if (result.type === 'success' || result.type === 'dismiss') {
-        await refresh();
+      if (Platform.OS === 'android') {
+        // On Android, openAuthSessionAsync is unreliable — Chrome Custom Tabs don't
+        // intercept custom scheme redirects and the call can throw on some devices.
+        // Use Linking.openURL to open the checkout in the default browser instead.
+        // SubscriptionContext's AppState listener will refresh subscription when the
+        // user returns to the app after payment.
+        await Linking.openURL(data.url);
+      } else {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, 'globalreadymobile://');
+        if (result.type === 'success' || result.type === 'dismiss') {
+          await refresh();
+        }
       }
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Something went wrong. Please try again.');

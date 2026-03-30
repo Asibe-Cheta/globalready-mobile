@@ -123,7 +123,7 @@ export default function MyInterviewsScreen() {
           <Text style={styles.emptySub}>Complete an interview practice session and your results will appear here.</Text>
           <TouchableOpacity
             style={styles.startBtn}
-            onPress={() => router.push('/interview-prep')}
+            onPress={() => router.push('/interview-practice')}
             activeOpacity={0.85}
           >
             <Text style={styles.startBtnText}>Start Practising</Text>
@@ -139,12 +139,7 @@ export default function MyInterviewsScreen() {
               session={item}
               colors={colors}
               styles={styles}
-              onRetake={() =>
-                router.push({
-                  pathname: '/interview-prep',
-                  params: { jobTitle: item.job_title, company: item.company },
-                })
-              }
+              onRetake={() => router.push('/interview-practice')}
             />
           )}
         />
