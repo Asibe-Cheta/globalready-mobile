@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,10 +10,8 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 
 import { AppHeader } from '@/components/ui/app-header';
-import { PrimaryButton } from '@/components/ui/primary-button';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase';
@@ -235,25 +232,17 @@ export default function BillingScreen() {
               ))}
             </View>
 
-            {Platform.OS === 'ios' ? (
-              <View style={styles.iosUpgradeWrap}>
-                <Text style={styles.iosUpgradeText}>
-                  To upgrade to Pro, visit our website and subscribe there. Your Pro status will sync automatically to this app.
-                </Text>
-                <TouchableOpacity
-                  style={styles.iosUpgradeButton}
-                  onPress={handleVisitWebsite}
-                >
-                  <Text style={styles.iosUpgradeButtonText}>Visit globalready.tech</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <PrimaryButton
-                label={loading ? 'Opening checkout...' : 'Upgrade to Pro — €9.99/mo'}
-                onPress={handleUpgrade}
-                disabled={loading}
-              />
-            )}
+            <View style={styles.iosUpgradeWrap}>
+              <Text style={styles.iosUpgradeText}>
+                To upgrade to Pro, visit our website and subscribe there. Your Pro status will sync automatically to this app.
+              </Text>
+              <TouchableOpacity
+                style={styles.iosUpgradeButton}
+                onPress={handleVisitWebsite}
+              >
+                <Text style={styles.iosUpgradeButtonText}>Visit globalready.tech</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 

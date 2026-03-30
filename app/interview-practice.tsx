@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -53,16 +53,24 @@ export default function InterviewPracticeScreen() {
 
   useEffect(() => {
     loadAppliedMatches();
-    checkFreeSessionUsed();
   }, []);
 
-  const checkFreeSessionUsed = async () => {
+  // Re-check gating every time the screen gains focus so returning from a
+  // completed session immediately shows the paywall if the limit is now reached.
+  useFocusEffect(
+    useCallback(() => {
+      checkFreeSessionUsed(true);
+    }, [isPro])
+  );
+
+  const checkFreeSessionUsed = async (showPaywallIfGated = false) => {
     try {
       // Fast local check first — set after first DB confirmation
       const local = await AsyncStorage.getItem(FREE_INTERVIEW_KEY);
       if (local === 'true') {
         setFreeSessionUsed(true);
         setCheckingAccess(false);
+        if (showPaywallIfGated && !isPro) setShowPaywall(true);
         return;
       }
 
@@ -80,6 +88,7 @@ export default function InterviewPracticeScreen() {
         setFreeSessionUsed(true);
         // Cache locally so future checks are instant
         await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true');
+        if (showPaywallIfGated && !isPro) setShowPaywall(true);
       }
     } catch {
       // DB unavailable — AsyncStorage fallback only
