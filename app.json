@@ -12,7 +12,7 @@
       "adzunaAppId": "92a48519",
       "adzunaAppKey": "a5df0b0336a7491a3ccf51290351e0d6"
     },
-    "version": "2.1.0",
+    "version": "2.2.0",
     "orientation": "portrait",
     "icon": "./assets/logo/global-logo.png",
     "scheme": "globalreadymobile",
@@ -30,7 +30,7 @@
       "bundleIdentifier": "com.globalready.app",
       "usesAppleSignIn": true,
       "backgroundColor": "#101722",
-      "buildNumber": "51",
+      "buildNumber": "52",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos to upload your CV",
         "NSCameraUsageDescription": "We need camera access to scan documents",
@@ -50,7 +50,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.globalready.app",
-      "versionCode": 17,
+      "versionCode": 18,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
