@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { Screen } from '@/components/ui/screen';
 import { theme } from '@/constants/globalready-theme';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { loadSkillsHubDraft } from '@/services/storage/progress';
 
 type PathCardProps = {
@@ -47,6 +48,7 @@ export default function LandingScreen() {
   const { colors, isDark, toggleTheme } = useAppTheme();
   const styles = makeStyles(colors);
   const router = useRouter();
+  const { isPro } = useSubscription();
   const [workAbroadRoute, setWorkAbroadRoute] = useState<string | null>(null);
   const [skillsHubRoute, setSkillsHubRoute] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -203,6 +205,23 @@ export default function LandingScreen() {
             styles={styles}
           />
         </Animated.View>
+
+        {!isPro && (
+          <TouchableOpacity
+            style={styles.upgradeBanner}
+            onPress={() => router.push('/billing')}
+            accessibilityRole="button"
+          >
+            <View style={styles.upgradeBannerLeft}>
+              <MaterialIcons name="bolt" size={20} color="#f59e0b" />
+              <View>
+                <Text style={styles.upgradeBannerTitle}>Upgrade to Pro</Text>
+                <Text style={styles.upgradeBannerSubtitle}>Unlock everything you need to get job-ready faster</Text>
+              </View>
+            </View>
+            <MaterialIcons name="arrow-forward-ios" size={14} color="#f59e0b" />
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.footer}>GlobalReady v1.0</Text>
       </ScrollView>
@@ -368,5 +387,32 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     fontSize: 10,
     letterSpacing: 2,
     textTransform: 'uppercase',
+  },
+  upgradeBanner: {
+    marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.3)',
+  },
+  upgradeBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  upgradeBannerTitle: {
+    color: '#f59e0b',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  upgradeBannerSubtitle: {
+    color: c.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
   },
 });

@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -14,13 +15,17 @@ import {
 import { Screen } from '@/components/ui/screen';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
 import { useAssessment } from '@/contexts/AssessmentContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { isValidCountryName, resolveCountryName } from '@/data/countryDialCodes';
+
+const FREE_CV_DOWNLOAD_KEY = 'gr_free_cv_downloaded';
 
 const countryOptions = [
   { label: 'Luxembourg', value: 'Luxembourg', flag: '🇱🇺' },
   { label: 'Germany', value: 'Germany', flag: '🇩🇪' },
   { label: 'Canada', value: 'Canada', flag: '🇨🇦' },
   { label: 'UK', value: 'United Kingdom', flag: '🇬🇧' },
+  { label: 'Global', value: 'Global', flag: '🌐' },
   { label: 'Other', value: 'Other', flag: '🌍' },
 ];
 
@@ -40,6 +45,7 @@ export default function AssessmentTargetingScreen() {
   const styles = makeStyles(colors);
   const router = useRouter();
   const { assessmentData, updateAssessment, nextStep, saveDraft } = useAssessment();
+  const { isPro } = useSubscription();
 
   const existingCountry = assessmentData.targetCountry || '';
   const isPresetCountry = countryOptions.some((c) => c.value === existingCountry);
@@ -57,6 +63,22 @@ export default function AssessmentTargetingScreen() {
   );
 
   const handleContinue = async () => {
+    // Free plan: only 1 CV creation allowed
+    if (!isPro) {
+      const used = await AsyncStorage.getItem(FREE_CV_DOWNLOAD_KEY);
+      if (used === 'true') {
+        Alert.alert(
+          'CV Limit Reached',
+          'Free plan includes 1 CV. Upgrade to Pro for unlimited CVs, tailoring, and downloads.',
+          [
+            { text: 'Maybe Later', style: 'cancel' },
+            { text: 'Upgrade to Pro', onPress: () => router.push('/billing') },
+          ]
+        );
+        return;
+      }
+    }
+
     const targetCountry =
       selectedCountry === 'Other'
         ? resolveCountryName(otherCountry) || otherCountry.trim()
@@ -136,7 +158,7 @@ export default function AssessmentTargetingScreen() {
             </View>
           </View>
 
-          {selectedCountry === 'Other' ? (
+          {selectedCountry === 'Other' && selectedCountry !== 'Global' ? (
             <View style={styles.otherCountryWrap}>
               <Text style={styles.otherCountryLabel}>Type your country</Text>
               <TextInput

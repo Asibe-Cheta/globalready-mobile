@@ -37,16 +37,11 @@ export default function MyCVsScreen() {
         return;
       }
 
-      let query = supabase
+      const { data, error } = await supabase
         .from('cvs')
         .select('*')
-        .eq('user_id', user.id);
-
-      if (!isPro) {
-        query = query.in('payment_status', ['paid', 'completed']);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setCVs(data || []);
@@ -75,12 +70,12 @@ export default function MyCVsScreen() {
       {cvs.length === 0 ? (
         <View style={styles.emptyWrap}>
           <ErrorState
-            message="You don't have any paid CVs yet. Complete a CV and payment to see it here."
+            message="You haven't created a CV yet. Start the Work Abroad assessment to build your first CV."
             onRetry={loadCVs}
           />
           {!isPro ? (
             <View style={styles.proHint}>
-              <Text style={styles.proHintText}>Unlock unlimited downloads and AI tailoring with Pro.</Text>
+              <Text style={styles.proHintText}>Upgrade to Pro for unlimited CVs, AI tailoring, and downloads.</Text>
               <TouchableOpacity onPress={() => router.push('/billing')} accessibilityRole="button">
                 <Text style={styles.proHintLink}>Learn more</Text>
               </TouchableOpacity>

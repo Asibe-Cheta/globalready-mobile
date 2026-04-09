@@ -17,9 +17,12 @@ import {
 import { JobCard } from '@/components/jobs/JobCard';
 import { Screen } from '@/components/ui/screen';
 import { useAppTheme, type AppColors } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ADZUNA_COUNTRIES } from '@/services/adzuna';
 import { JobFilters, jobsService } from '@/services/supabase/jobs';
 import { Job } from '@/types/job';
+
+const FREE_JOB_LIMIT = 5;
 
 const PAGE_SIZE = 20;
 
@@ -144,6 +147,7 @@ export default function JobsFeedScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
+  const { isPro } = useSubscription();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -229,8 +233,9 @@ export default function JobsFeedScreen() {
   }, [loadJobs]);
 
   const onEndReached = useCallback(() => {
+    if (!isPro) return; // Free users: no pagination beyond FREE_JOB_LIMIT
     if (!loadingMore && currentJobsLenRef.current < total) loadJobs(false);
-  }, [loadingMore, total, loadJobs]);
+  }, [isPro, loadingMore, total, loadJobs]);
 
   const handleJobPress = (job: Job) => {
     router.push({
@@ -240,6 +245,7 @@ export default function JobsFeedScreen() {
   };
 
   const activeCountry = ADZUNA_COUNTRIES.find(c => c.code === selectedCountry);
+  const visibleJobs = !isPro && jobs.length > FREE_JOB_LIMIT ? jobs.slice(0, FREE_JOB_LIMIT) : jobs;
 
   const listHeaderProps: ListHeaderProps = {
     styles,
@@ -319,11 +325,32 @@ export default function JobsFeedScreen() {
     );
   };
 
-  const ListFooter = () => loadingMore ? (
-    <View style={styles.footerLoader}>
-      <ActivityIndicator size="small" color={colors.primary} />
+  const JobsUpgradeBanner = () => (
+    <View style={styles.upgradeCard}>
+      <MaterialIcons name="lock" size={28} color={colors.primary} />
+      <Text style={styles.upgradeCardTitle}>Unlock all job listings</Text>
+      <Text style={styles.upgradeCardSubtitle}>
+        You're seeing {FREE_JOB_LIMIT} of {total.toLocaleString()} jobs. Upgrade to Pro for full access to every listing, including links and application details.
+      </Text>
+      <TouchableOpacity style={styles.upgradeCardButton} onPress={() => router.push('/billing')}>
+        <Text style={styles.upgradeCardButtonText}>Upgrade to Pro</Text>
+      </TouchableOpacity>
     </View>
-  ) : <View style={styles.footerSpacer} />;
+  );
+
+  const ListFooter = () => {
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      );
+    }
+    if (!isPro && jobs.length > FREE_JOB_LIMIT) {
+      return <JobsUpgradeBanner />;
+    }
+    return <View style={styles.footerSpacer} />;
+  };
 
   return (
     <Screen>
@@ -347,7 +374,7 @@ export default function JobsFeedScreen() {
           </View>
         ) : (
           <FlatList
-            data={jobs}
+            data={visibleJobs}
             renderItem={({ item }) => <JobCard job={item} onPress={() => handleJobPress(item)} />}
             keyExtractor={(item) => item.id}
             ListHeaderComponent={<ListHeader {...listHeaderProps} />}
@@ -459,6 +486,41 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
   retryText: { color: c.textPrimary, fontSize: 14, fontWeight: '700' },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
   footerSpacer: { height: 20 },
+  upgradeCard: {
+    marginTop: 16,
+    marginBottom: 32,
+    backgroundColor: c.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: c.primary + '50',
+    padding: 24,
+    alignItems: 'center',
+    gap: 10,
+  },
+  upgradeCardTitle: {
+    color: c.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  upgradeCardSubtitle: {
+    color: c.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  upgradeCardButton: {
+    marginTop: 6,
+    backgroundColor: c.primary,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+  },
+  upgradeCardButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   // Country picker modal
   pickerOverlay: {
     position: 'absolute',

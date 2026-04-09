@@ -72,9 +72,10 @@ function formatDate(iso: string | null): string {
 
 const PRO_FEATURES = [
   'Unlimited CV downloads',
-  'Unlimited AI tailoring (no €5 fee)',
+  'Unlimited AI CV tailoring',
   'Unlimited AI job-fit checks',
-  'Full job listing links',
+  'Full job board access (all listings)',
+  'Unlimited interview practice sessions',
   'Cancel anytime',
 ];
 
@@ -207,7 +208,7 @@ export default function BillingScreen() {
             </Text>
           ) : (
             <Text style={styles.planSubtitle}>
-              Upgrade to Pro to download & tailor CVs without per-action fees
+              1 CV · 1 download · 5 job listings · 2 interview sessions
             </Text>
           )}
         </View>

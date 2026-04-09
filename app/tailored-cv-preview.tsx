@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { LoadingState } from '@/components/LoadingState';
@@ -126,6 +126,13 @@ export default function TailoredCvPreviewScreen() {
   const [loading, setLoading] = useState(true);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
+  const [freeDownloadUsed, setFreeDownloadUsed] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('gr_free_cv_downloaded').then(val => {
+      setFreeDownloadUsed(val === 'true');
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     saveTailorCvDraft({ last_route: '/tailored-cv-preview' }).catch(() => undefined);
@@ -249,29 +256,35 @@ export default function TailoredCvPreviewScreen() {
               onPress={handleProDownload}
               disabled={markingPaid}
             />
+          ) : freeDownloadUsed ? (
+            <>
+              <PrimaryButton
+                label="Upgrade to Pro to Download"
+                onPress={() => router.push('/billing')}
+              />
+              <Text style={styles.bottomNote}>
+                Unlock everything you need to get job-ready faster
+              </Text>
+            </>
           ) : (
             <>
               <PrimaryButton
-                label={isTailoringMode ? 'Download Tailored CV – €5' : 'Download Generated CV – €5'}
-                onPress={() =>
-                  router.push({
-                    pathname: '/complete-purchase',
-                    params: { cvId: finalCvId, amount: 500, serviceType: 'cv_tailoring', jobDescription: finalJobDescription },
-                  })
-                }
+                label={isTailoringMode ? 'Download Tailored CV (Free)' : 'Download Your CV (Free)'}
+                onPress={handleProDownload}
+                disabled={markingPaid}
               />
               <TouchableOpacity
                 onPress={() => router.push('/billing')}
                 style={styles.proLinkWrap}
                 accessibilityRole="button"
               >
-                <Text style={styles.proLinkText}>Or get unlimited tailoring with Pro</Text>
+                <Text style={styles.proLinkText}>Upgrade to Pro for unlimited CVs & tailoring</Text>
               </TouchableOpacity>
             </>
           )}
-          <Text style={styles.bottomNote}>
-            {isPro ? 'Included in your Pro plan.' : 'Creates a professional new version for this specific job.'}
-          </Text>
+          {isPro && (
+            <Text style={styles.bottomNote}>Included in your Pro plan.</Text>
+          )}
         </View>
       </View>
 

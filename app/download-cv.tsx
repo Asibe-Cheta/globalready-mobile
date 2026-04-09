@@ -94,6 +94,15 @@ export default function DownloadCvScreen() {
       return;
     }
 
+    // Free users: gate second download
+    if (!isPro) {
+      const used = await AsyncStorage.getItem('gr_free_cv_downloaded');
+      if (used === 'true') {
+        setShowProModal(true);
+        return;
+      }
+    }
+
     setGenerating(true);
     try {
       const html = buildCVHtml(cvData);
@@ -108,6 +117,8 @@ export default function DownloadCvScreen() {
         });
         setDownloaded(true);
         if (!isPro) {
+          // Mark free download as used
+          await AsyncStorage.setItem('gr_free_cv_downloaded', 'true');
           shouldShowProPrompt('pro_after_download').then((show) => {
             if (show) setShowProModal(true);
           });
@@ -229,7 +240,7 @@ export default function DownloadCvScreen() {
 
       <ProSuggestionModal
         visible={showProModal}
-        message="Generate more CVs with even more quality. Pro includes unlimited downloads and AI tailoring."
+        message="Unlock everything you need to get job-ready faster. Pro includes unlimited CV downloads, AI tailoring, and full job listings."
         onSeePro={() => router.push('/billing')}
         onDismiss={() => {
           setShowProModal(false);

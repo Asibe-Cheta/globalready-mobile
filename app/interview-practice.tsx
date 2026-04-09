@@ -84,7 +84,7 @@ export default function InterviewPracticeScreen() {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      if ((count ?? 0) >= 1) {
+      if ((count ?? 0) >= 2) {
         setFreeSessionUsed(true);
         // Cache locally so future checks are instant
         await AsyncStorage.setItem(FREE_INTERVIEW_KEY, 'true');
@@ -187,7 +187,7 @@ export default function InterviewPracticeScreen() {
             {!isPro && !freeSessionUsed && (
               <View style={styles.freeSessionBadge}>
                 <MaterialIcons name="stars" size={16} color="#f59e0b" />
-                <Text style={styles.freeSessionText}>You have 1 free session — make it count</Text>
+                <Text style={styles.freeSessionText}>You have 2 free sessions — make them count</Text>
               </View>
             )}
             {!isPro && freeSessionUsed && (
@@ -348,9 +348,9 @@ export default function InterviewPracticeScreen() {
               <MaterialIcons name="mic" size={32} color="#fff" />
             </View>
 
-            <Text style={styles.paywallTitle}>You've used your free session</Text>
+            <Text style={styles.paywallTitle}>You've used your 2 free sessions</Text>
             <Text style={styles.paywallSubtitle}>
-              You already gave it a go — now take it further. Pro members get unlimited practice, deeper feedback, and coaching that actually moves the needle.
+              Unlock everything you need to get job-ready faster. Pro members get unlimited practice, deeper AI feedback, and coaching that actually moves the needle.
             </Text>
 
             <View style={styles.paywallBenefits}>
