@@ -98,7 +98,8 @@
             "deploymentTarget": "15.1"
           }
         }
-      ]
+      ],
+      "./plugins/with-gradle-wrapper-timeout"
     ],
     "experiments": {
       "typedRoutes": true,
