@@ -125,11 +125,33 @@ export default function WorldwideJobsScreen() {
     if (error) {
       return (
         <View style={styles.emptyWrap}>
-          <MaterialIcons name="error-outline" size={48} color="#f87171" />
-          <Text style={styles.emptyTitle}>Something went wrong</Text>
-          <Text style={styles.emptyText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadJobs(true)}>
-            <Text style={styles.retryText}>Retry</Text>
+          <MaterialIcons name="cloud-off" size={48} color="#f87171" />
+          <Text style={styles.emptyTitle}>Jobs temporarily unavailable</Text>
+          <Text style={styles.emptyText}>
+            We couldn't load jobs right now. Try switching to another category or come back shortly.
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginTop: 8 }}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+          >
+            {CATEGORIES.map(cat => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.retryButton, category === cat.key && { opacity: 0.5 }]}
+                onPress={() => setCategory(cat.key)}
+                disabled={category === cat.key}
+              >
+                <Text style={styles.retryText}>{cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#f87171', marginTop: 4 }]}
+            onPress={() => loadJobs(true)}
+          >
+            <Text style={[styles.retryText, { color: '#f87171' }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       );

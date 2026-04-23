@@ -1,8 +1,7 @@
 import { Job } from '@/types/job';
 
-const APP_ID = process.env.EXPO_PUBLIC_ADZUNA_APP_ID as string;
-const APP_KEY = process.env.EXPO_PUBLIC_ADZUNA_APP_KEY as string;
-const BASE = 'https://api.adzuna.com/v1/api/jobs';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
 
 // Adzuna country codes that match GlobalReady's target markets
 export const ADZUNA_COUNTRIES: { code: string; label: string; flag: string }[] = [
@@ -41,12 +40,11 @@ interface AdzunaResult {
   salary_min?: number;
   salary_max?: number;
   salary_is_predicted?: string;
+  // Reed jobs merged in edge function
+  _source?: 'reed';
+  _visa_sponsorship?: 'YES' | 'NO' | 'UNKNOWN';
 }
 
-interface AdzunaResponse {
-  results: AdzunaResult[];
-  count: number;
-}
 
 function formatSalary(min?: number, max?: number, country?: string): string | null {
   if (!min && !max) return null;
@@ -72,19 +70,20 @@ function mapJobType(contractTime?: string, contractType?: string): string {
 }
 
 function mapToJob(r: AdzunaResult, country: string): Job {
+  const isReed = r._source === 'reed';
   return {
-    id: `adzuna_${r.id}`,
+    id: isReed ? r.id : `adzuna_${r.id}`,
     title: r.title,
     company: r.company.display_name,
     company_logo_url: null,
-    country: ADZUNA_COUNTRIES.find((c) => c.code === country)?.label ?? country.toUpperCase(),
+    country: isReed ? 'United Kingdom' : (ADZUNA_COUNTRIES.find((c) => c.code === country)?.label ?? country.toUpperCase()),
     city: r.location.display_name,
     job_type: mapJobType(r.contract_time, r.contract_type),
     sector: r.category.label,
-    visa_sponsorship: 'UNKNOWN',
-    salary_range: formatSalary(r.salary_min, r.salary_max, country),
+    visa_sponsorship: r._visa_sponsorship ?? 'UNKNOWN',
+    salary_range: formatSalary(r.salary_min, r.salary_max, isReed ? 'gb' : country),
     requirements: null,
-    description: r.description.replace(/<[^>]*>/g, '').trim(),
+    description: (r.description ?? '').replace(/<[^>]*>/g, '').trim(),
     apply_url: r.redirect_url,
     posted_date: r.created,
     expires_at: null,
@@ -109,30 +108,25 @@ export async function fetchAdzunaJobs(
     resultsPerPage = 20,
   } = filters;
 
-  const params = new URLSearchParams({
-    app_id: APP_ID,
-    app_key: APP_KEY,
-    results_per_page: String(resultsPerPage),
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/fetch-jobs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ country, what, visaSponsorship, remote, page, resultsPerPage }),
   });
 
-  // Build search query
-  const terms: string[] = [];
-  if (what?.trim()) terms.push(what.trim());
-  if (visaSponsorship) terms.push('visa sponsorship');
-  if (remote) terms.push('remote');
-  if (terms.length) params.set('what', terms.join(' '));
-
-  const url = `${BASE}/${country}/search/${page}?${params.toString()}`;
-
-  const res = await fetch(url);
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Adzuna API error ${res.status}: ${text}`);
   }
 
-  const data: AdzunaResponse = await res.json();
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+
   return {
-    jobs: (data.results ?? []).map((r) => mapToJob(r, country)),
-    total: data.count ?? 0,
+    jobs: (data.jobs ?? []).map((r: AdzunaResult) => mapToJob(r, country)),
+    total: data.total ?? 0,
   };
 }

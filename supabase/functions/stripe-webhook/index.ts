@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature!, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(body, signature!, webhookSecret);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
@@ -27,15 +27,70 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
+  /**
+   * Resolve a Supabase user_id from the given candidates.
+   * Priority:
+   *  1. user_id from Stripe metadata (most reliable — set by our checkout)
+   *  2. supabase_user_id from Stripe metadata (legacy field name used by web team)
+   *  3. Email from Stripe customer object (fallback when web team omits metadata)
+   */
+  async function resolveUserId(
+    metaUserId: string | undefined | null,
+    metaSupabaseUserId: string | undefined | null,
+    customerId: string | null | undefined
+  ): Promise<string | null> {
+    // 1. Explicit user_id in metadata
+    if (metaUserId) return metaUserId;
+
+    // 2. Legacy field name
+    if (metaSupabaseUserId) return metaSupabaseUserId;
+
+    // 3. Email-based lookup via Stripe customer — paginate through ALL users
+    if (customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        if (!customer.deleted && customer.email) {
+          const targetEmail = customer.email.toLowerCase();
+          let page = 1;
+          const perPage = 1000;
+          while (true) {
+            const { data: { users } } = await supabase.auth.admin.listUsers({ page, perPage });
+            if (!users?.length) break;
+            const match = users.find((u) => u.email?.toLowerCase() === targetEmail);
+            if (match) {
+              console.log(`Resolved user_id ${match.id} via email ${customer.email}`);
+              return match.id;
+            }
+            if (users.length < perPage) break; // last page reached
+            page++;
+          }
+          console.error(`No Supabase user found for email ${customer.email}`);
+        }
+      } catch (err: any) {
+        console.error('Failed to resolve user by email:', err.message);
+      }
+    }
+
+    return null;
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode !== 'subscription') break;
 
-        const userId = session.metadata?.user_id;
+        const userId = await resolveUserId(
+          session.metadata?.user_id,
+          session.metadata?.supabase_user_id,
+          session.customer as string | null
+        );
+
         if (!userId) {
-          console.error('checkout.session.completed: missing user_id in metadata');
+          console.error(
+            'checkout.session.completed: could not resolve user_id — ' +
+            'metadata missing and email lookup failed. Session:', session.id
+          );
           break;
         }
 
@@ -55,6 +110,8 @@ Deno.serve(async (req) => {
           },
           { onConflict: 'user_id' }
         );
+
+        console.log(`Subscription activated for user ${userId}`);
         break;
       }
 
@@ -68,16 +125,23 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         };
 
-        const userId = subscription.metadata?.supabase_user_id;
+        // Try to find user by metadata first (both field name variants), then
+        // fall back to the existing stripe_subscription_id row.
+        const userId = subscription.metadata?.user_id || subscription.metadata?.supabase_user_id;
+
         if (userId) {
           await supabase
             .from('subscriptions')
             .upsert({ user_id: userId, ...updateData }, { onConflict: 'user_id' });
         } else {
-          await supabase
+          // No metadata — update by subscription ID (row must already exist)
+          const { error } = await supabase
             .from('subscriptions')
             .update(updateData)
             .eq('stripe_subscription_id', subscription.id);
+          if (error) {
+            console.error('subscription.updated: failed to update by stripe_subscription_id:', error.message);
+          }
         }
         break;
       }

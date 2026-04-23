@@ -468,6 +468,9 @@ export default function JobDetailScreen() {
                 </Text>
               </View>
             ) : null}
+            <Text style={styles.thirdPartyNote}>
+              This opportunity is hosted on a third-party platform and may have its own registration requirements, subscription, or fees.
+            </Text>
           </View>
         </ScrollView>
 
@@ -804,6 +807,15 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     flex: 1,
+  },
+  thirdPartyNote: {
+    color: c.textSecondary,
+    fontSize: 11,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 4,
+    opacity: 0.7,
   },
   proCtaCard: {
     marginHorizontal: 20,

@@ -37,6 +37,9 @@ function sanitizeForNative(obj) {
 
 const expo = {
   ...base.expo,
+  updates: {
+    url: 'https://u.expo.dev/24bee49b-8cb4-4a4e-acf8-166ae28576d3',
+  },
   // Ensure every value in extra is a non-nil string so native never crashes
   extra: {
     eas: {
@@ -72,6 +75,7 @@ const expo = {
   },
   ios: {
     ...base.expo?.ios,
+    runtimeVersion: base.expo?.version ?? '2.2.1',
     buildNumber: str(base.expo?.ios?.buildNumber ?? '8'),
     infoPlist: {
       ...base.expo?.ios?.infoPlist,
@@ -85,6 +89,20 @@ const expo = {
     },
   },
 };
+
+// Inject android runtimeVersion and expo-updates plugin
+expo.android = {
+  ...expo.android,
+  runtimeVersion: { policy: 'appVersion' },
+};
+
+// Add expo-updates plugin if not already present
+const hasUpdatesPlugin = (expo.plugins ?? []).some(
+  (p) => p === 'expo-updates' || (Array.isArray(p) && p[0] === 'expo-updates')
+);
+if (!hasUpdatesPlugin) {
+  expo.plugins = [...(expo.plugins ?? []), 'expo-updates'];
+}
 
 // Deep-sanitize so no null/undefined remains anywhere (plugins, experiments, etc.)
 module.exports = {

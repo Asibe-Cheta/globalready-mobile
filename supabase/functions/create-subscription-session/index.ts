@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{ price: proPriceId, quantity: 1 }],
+      allow_promotion_codes: true,
       success_url: successUrl || 'globalreadymobile://billing-success',
       cancel_url: cancelUrl || 'globalreadymobile://billing',
       metadata: { user_id: user.id },

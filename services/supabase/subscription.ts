@@ -5,7 +5,7 @@ export interface Subscription {
   user_id: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
-  status: 'active' | 'canceled' | 'past_due' | 'inactive';
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'inactive';
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   created_at: string;
@@ -25,7 +25,7 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
 
 export function isProActive(sub: Subscription | null): boolean {
   if (!sub) return false;
-  if (sub.status !== 'active') return false;
+  if (sub.status !== 'active' && sub.status !== 'trialing') return false;
   if (!sub.current_period_end) return false;
   return new Date(sub.current_period_end) > new Date();
 }

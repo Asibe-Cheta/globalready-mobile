@@ -15,9 +15,9 @@
       }
     },
     "production": {
+      "channel": "production",
       "ios": {
         "buildConfiguration": "Release",
-        "autoIncrement": true,
         "image": "latest"
       },
       "android": {

@@ -184,6 +184,9 @@ export default function InterviewPracticeScreen() {
             <Text style={styles.heroSub}>
               Use an applied job or paste a description. The AI will ask role-specific questions and give you feedback.
             </Text>
+            <Text style={styles.aiDisclaimer}>
+              AI-generated feedback and practice questions are for training purposes only and may not always be accurate or suitable for every situation.
+            </Text>
             {!isPro && !freeSessionUsed && (
               <View style={styles.freeSessionBadge}>
                 <MaterialIcons name="stars" size={16} color="#f59e0b" />
@@ -423,6 +426,15 @@ const makeStyles = (c: AppColors) =>
       textAlign: 'center',
       lineHeight: 20,
       paddingHorizontal: 8,
+    },
+    aiDisclaimer: {
+      color: c.textSecondary,
+      fontSize: 11,
+      textAlign: 'center',
+      lineHeight: 16,
+      paddingHorizontal: 16,
+      marginTop: 8,
+      opacity: 0.65,
     },
     freeSessionBadge: {
       flexDirection: 'row',

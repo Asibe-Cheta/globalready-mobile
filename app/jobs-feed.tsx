@@ -42,13 +42,14 @@ type ListHeaderProps = {
   activeCountry: typeof ADZUNA_COUNTRIES[number] | undefined;
   total: number;
   loading: boolean;
+  adzunaDown: boolean;
   router: ReturnType<typeof useRouter>;
 };
 
 const ListHeader = React.memo(function ListHeader({
   styles, colors, query, onQueryChange, activeTab, onTabChange,
   selectedCountry, selectedSector, onSectorChange, onOpenCountryPicker,
-  activeCountry, total, loading, router,
+  activeCountry, total, loading, adzunaDown, router,
 }: ListHeaderProps) {
   return (
     <View>
@@ -119,6 +120,7 @@ const ListHeader = React.memo(function ListHeader({
         ))}
       </ScrollView>
 
+      {null /* adzuna status banner intentionally hidden */}
       {total > 0 && !loading && (
         <Text style={styles.resultCount}>{total.toLocaleString()} jobs found</Text>
       )}
@@ -153,6 +155,7 @@ export default function JobsFeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adzunaDown, setAdzunaDown] = useState(false);
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [selectedCountry, setSelectedCountry] = useState('gb');
@@ -174,10 +177,10 @@ export default function JobsFeedScreen() {
   };
 
   const buildFilters = useCallback((): JobFilters => {
-    const terms = [query.trim(), selectedSector].filter(Boolean).join(' ');
     return {
       country: selectedCountry,
-      searchQuery: terms || undefined,
+      sector: selectedSector || undefined,
+      searchQuery: query.trim() || undefined,
       remote: activeTab === 'remote',
       visaSponsorship: activeTab === 'sponsor',
       globalRemote: activeTab === 'global',
@@ -189,9 +192,10 @@ export default function JobsFeedScreen() {
       if (reset) setLoading(true);
       else setLoadingMore(true);
       setError(null);
+      if (reset) setAdzunaDown(false);
 
       const offset = reset ? 0 : currentJobsLenRef.current;
-      const { jobs: data, total: totalCount } = await jobsService.getJobs(
+      const { jobs: data, total: totalCount, adzunaFailed } = await jobsService.getJobs(
         buildFilters(),
         PAGE_SIZE,
         offset
@@ -208,6 +212,7 @@ export default function JobsFeedScreen() {
         });
       }
       setTotal(totalCount || 0);
+      setAdzunaDown(adzunaFailed ?? false);
     } catch (err: any) {
       setError(err.message || 'Failed to load jobs');
     } finally {
@@ -261,6 +266,7 @@ export default function JobsFeedScreen() {
     activeCountry,
     total,
     loading,
+    adzunaDown,
     router,
   };
 
@@ -303,13 +309,40 @@ export default function JobsFeedScreen() {
   const ListEmpty = () => {
     if (loading) return null;
     if (error) {
+      const isRateLimit = error.includes('429') || error.includes('Usage limits') || error.includes('AUTH_FAIL');
       return (
         <View style={styles.emptyWrap}>
-          <MaterialIcons name="error-outline" size={48} color="#f87171" />
-          <Text style={styles.emptyTitle}>Something went wrong</Text>
-          <Text style={styles.emptyText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadJobs(true)}>
-            <Text style={styles.retryText}>Retry</Text>
+          <MaterialIcons name="cloud-off" size={48} color="#f87171" />
+          <Text style={styles.emptyTitle}>Jobs temporarily unavailable</Text>
+          <Text style={styles.emptyText}>
+            {isRateLimit
+              ? "We're experiencing high demand right now. Switch to the Global Remote tab for hundreds of live remote jobs, or try another category below."
+              : "We couldn't load jobs right now. Switch categories to refresh, or try again shortly."}
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginTop: 8 }}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+          >
+            {(['all', 'remote', 'sponsor', 'global'] as Tab[]).map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.retryButton, activeTab === tab && { opacity: 0.5 }]}
+                onPress={() => setActiveTab(tab)}
+                disabled={activeTab === tab}
+              >
+                <Text style={styles.retryText}>
+                  {tab === 'all' ? 'All Jobs' : tab === 'remote' ? 'Remote' : tab === 'sponsor' ? 'Sponsorship' : 'Global Remote'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, marginTop: 4 }]}
+            onPress={() => loadJobs(true)}
+          >
+            <Text style={[styles.retryText, { color: colors.primary }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       );
@@ -473,6 +506,28 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
   },
   sectorText: { color: c.textDim, fontSize: 12, fontWeight: '600' },
   sectorTextActive: { color: c.primary, fontWeight: '700' },
+  adzunaDownBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.3)',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+  },
+  adzunaDownText: {
+    flex: 1,
+    color: '#f59e0b',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  adzunaDownLink: {
+    color: '#f59e0b',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
   resultCount: {
     color: c.textSecondary,
     fontSize: 12,

@@ -233,6 +233,12 @@ export default function BillingScreen() {
               ))}
             </View>
 
+            <View style={styles.disclosureBox}>
+              <Text style={styles.disclosureText}>
+                You are subscribing to GlobalReady Pro for €9.99 per month. Your subscription renews automatically unless cancelled before your next billing date. You can cancel at any time via Profile → Billing or by contacting contact@globalready.tech. GlobalReady Pro gives access to premium features within GlobalReady. Some job opportunities may link to third-party platforms that require separate registration, subscription, or fees.
+              </Text>
+            </View>
+
             <View style={styles.iosUpgradeWrap}>
               <Text style={styles.iosUpgradeText}>
                 To upgrade to Pro, visit our website and subscribe there. Your Pro status will sync automatically to this app.
@@ -244,6 +250,22 @@ export default function BillingScreen() {
                 <Text style={styles.iosUpgradeButtonText}>Visit globalready.tech</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={styles.restoreButton}
+              onPress={async () => {
+                setLoading(true);
+                await refresh();
+                setLoading(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#0d6cf2" />
+              ) : (
+                <Text style={styles.restoreButtonText}>Already subscribed? Restore Pro</Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
 
@@ -421,6 +443,20 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
+  disclosureBox: {
+    backgroundColor: c.cardBackground,
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: c.border,
+    marginBottom: 12,
+  },
+  disclosureText: {
+    fontSize: 12,
+    color: c.textSecondary,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
   iosUpgradeWrap: {
     backgroundColor: c.background,
     borderRadius: 12,
@@ -445,5 +481,16 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  restoreButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  restoreButtonText: {
+    fontSize: 14,
+    color: '#0d6cf2',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

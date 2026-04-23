@@ -15,7 +15,7 @@ export default function PrivacyPolicyScreen() {
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           <Text style={styles.title}>Privacy Policy</Text>
-          <Text style={styles.lastUpdated}>Last updated: January 2026</Text>
+          <Text style={styles.lastUpdated}>Last updated: April 2026</Text>
 
           <Text style={styles.sectionTitle}>1. Information We Collect</Text>
           <Text style={styles.paragraph}>
@@ -92,21 +92,26 @@ export default function PrivacyPolicyScreen() {
             • Opt-out of marketing communications
           </Text>
 
-          <Text style={styles.sectionTitle}>5. Third-Party Services</Text>
+          <Text style={styles.sectionTitle}>5. AI-Powered Features</Text>
+          <Text style={styles.paragraph}>
+            GlobalReady uses AI to power CV tailoring, job-fit analysis, and interview practice. AI-generated outputs are provided for informational and training purposes only and may not always be accurate, complete, or suitable for every situation. You are responsible for reviewing AI-generated content before relying on it. Your data may be processed by our AI providers (including Anthropic) solely to deliver these features to you.
+          </Text>
+
+          <Text style={styles.sectionTitle}>6. Third-Party Services</Text>
           <Text style={styles.paragraph}>
             We use the following third-party services:
           </Text>
-          <Text style={styles.bulletPoint}>
-            • Supabase: Database and authentication
-          </Text>
-          <Text style={styles.bulletPoint}>
-            • Stripe: Payment processing
-          </Text>
-          <Text style={styles.bulletPoint}>
-            • Anthropic: AI-powered CV analysis
+          <Text style={styles.bulletPoint}>• Supabase: Database and authentication (EU servers)</Text>
+          <Text style={styles.bulletPoint}>• Stripe: Payment processing (PCI DSS compliant)</Text>
+          <Text style={styles.bulletPoint}>• Anthropic: AI-powered CV and interview features</Text>
+          <Text style={styles.bulletPoint}>• VAPI: AI voice interview sessions</Text>
+
+          <Text style={styles.sectionTitle}>7. Data Retention</Text>
+          <Text style={styles.paragraph}>
+            We retain your data while your account is active. On account deletion, we delete or anonymise your personal data within a reasonable period, except where retention is required by law. You can delete your account via Profile → Delete Account in the app.
           </Text>
 
-          <Text style={styles.sectionTitle}>6. Contact Us</Text>
+          <Text style={styles.sectionTitle}>8. Contact Us</Text>
           <Text style={styles.paragraph}>
             If you have questions about this Privacy Policy, please contact us:
           </Text>
