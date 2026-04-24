@@ -483,6 +483,76 @@ List user assessments.
 
 ---
 
+### 7. Subscriptions (Admin Monitoring)
+
+#### GET `/subscriptions/subscribed-users`
+
+List users currently considered **Pro in app** (`status in ['active','trialing']` and `current_period_end > now()`).
+
+**Query params:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | integer | 1 | Page number |
+| `limit` | integer | 50 | Items per page |
+
+**Response:**
+```json
+{
+  "subscriptions": [
+    {
+      "user_id": "uuid",
+      "status": "active",
+      "current_period_end": "2026-12-31T00:00:00Z",
+      "cancel_at_period_end": false,
+      "stripe_customer_id": "cus_...",
+      "stripe_subscription_id": "sub_...",
+      "updated_at": "2026-04-24T00:00:00Z",
+      "profiles": {
+        "id": "uuid",
+        "full_name": "Jane Doe",
+        "email": "jane@example.com",
+        "country": "Nigeria"
+      }
+    }
+  ],
+  "pagination": { "page": 1, "limit": 50, "total": 30 }
+}
+```
+
+---
+
+#### GET `/subscriptions/issues`
+
+Audit mismatch report between Stripe active/trialing subscriptions and app Pro DB rows.
+
+**Query params:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sample_limit` | integer | 100 | Max issue samples to return per bucket |
+
+**Response:**
+```json
+{
+  "summary": {
+    "stripe_active_subscriptions": 31,
+    "stripe_active_users_mapped": 30,
+    "db_pro_users": 30,
+    "in_stripe_not_in_db_count": 0,
+    "in_db_not_in_stripe_count": 0,
+    "unmatched_stripe_active_count": 0
+  },
+  "issues": {
+    "in_stripe_not_in_db": [],
+    "in_db_not_in_stripe": [],
+    "unmatched_stripe_active": []
+  }
+}
+```
+
+Use this endpoint in admin UI to detect users who paid in Stripe but are still not recognized as Pro in app.
+
+---
+
 ## Admin Email Notifications
 
 The mobile app automatically sends email notifications to admin(s) for:

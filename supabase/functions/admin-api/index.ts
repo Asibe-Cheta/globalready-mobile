@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'https://esm.sh/stripe@14.10.0?target=deno';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,6 +40,51 @@ function getSupabase() {
   const url = Deno.env.get('SUPABASE_URL')!;
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   return createClient(url, key);
+}
+
+function getStripe() {
+  const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET');
+  if (!stripeSecret) throw new Error('Missing STRIPE_SECRET_KEY');
+  return new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
+}
+
+function getUserIdFromMetadata(
+  metadata: Record<string, string> | null | undefined
+): string | null {
+  if (!metadata) return null;
+  return (
+    metadata.user_id ||
+    metadata.userId ||
+    metadata.uid ||
+    metadata.supabase_user_id ||
+    metadata.supabaseUserId ||
+    null
+  );
+}
+
+async function buildEmailToUserIdMap(supabase: ReturnType<typeof createClient>): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  let page = 1;
+  const perPage = 1000;
+
+  while (true) {
+    const {
+      data: { users },
+      error,
+    } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    if (!users?.length) break;
+
+    for (const user of users) {
+      const email = user.email?.toLowerCase();
+      if (email) map[email] = user.id;
+    }
+
+    if (users.length < perPage) break;
+    page++;
+  }
+
+  return map;
 }
 
 // ============================================================
@@ -658,6 +704,136 @@ async function getAssessments(url: URL) {
   });
 }
 
+// --- SUBSCRIPTIONS ---
+
+async function getSubscribedUsers(url: URL) {
+  const supabase = getSupabase();
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+  const offset = (page - 1) * limit;
+  const nowIso = new Date().toISOString();
+
+  const { data, error, count } = await supabase
+    .from('subscriptions')
+    .select(
+      'user_id,status,current_period_end,cancel_at_period_end,stripe_customer_id,stripe_subscription_id,updated_at,profiles:user_id(id,full_name,email,country)',
+      { count: 'exact' }
+    )
+    .in('status', ['active', 'trialing'])
+    .gt('current_period_end', nowIso)
+    .order('updated_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) return errorResponse(error.message, 500);
+
+  return jsonResponse({
+    subscriptions: data || [],
+    pagination: { page, limit, total: count || 0 },
+  });
+}
+
+async function getSubscriptionIssues(url: URL) {
+  const supabase = getSupabase();
+  const stripe = getStripe();
+  const sampleLimit = Math.min(parseInt(url.searchParams.get('sample_limit') || '100'), 500);
+
+  const emailToUserId = await buildEmailToUserIdMap(supabase);
+  const stripeActiveUserIds = new Set<string>();
+  let stripeActiveCount = 0;
+  const unmatchedStripeActive: Array<{
+    subscription_id: string;
+    customer_id: string | null;
+    email: string | null;
+    status: string;
+  }> = [];
+
+  let startingAfter: string | undefined;
+  while (true) {
+    const page = await stripe.subscriptions.list({
+      status: 'all',
+      limit: 100,
+      starting_after: startingAfter,
+      expand: ['data.customer'],
+    });
+
+    for (const sub of page.data) {
+      if (sub.status !== 'active' && sub.status !== 'trialing') continue;
+      stripeActiveCount++;
+
+      const customer = typeof sub.customer === 'string' ? null : sub.customer;
+      const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id ?? null;
+      const customerEmail = customer && !customer.deleted ? customer.email?.toLowerCase() ?? null : null;
+
+      const metadataUserId = getUserIdFromMetadata(sub.metadata);
+      const customerMetadataUserId =
+        customer && !customer.deleted ? getUserIdFromMetadata(customer.metadata as Record<string, string>) : null;
+
+      const userId = metadataUserId || customerMetadataUserId || (customerEmail ? emailToUserId[customerEmail] : null);
+
+      if (userId) {
+        stripeActiveUserIds.add(userId);
+      } else if (unmatchedStripeActive.length < sampleLimit) {
+        unmatchedStripeActive.push({
+          subscription_id: sub.id,
+          customer_id: customerId,
+          email: customerEmail,
+          status: sub.status,
+        });
+      }
+    }
+
+    if (!page.has_more) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+    if (!startingAfter) break;
+  }
+
+  const nowIso = new Date().toISOString();
+  const { data: dbSubs, error: dbError } = await supabase
+    .from('subscriptions')
+    .select('user_id,status,current_period_end,stripe_subscription_id,updated_at')
+    .in('status', ['active', 'trialing'])
+    .gt('current_period_end', nowIso);
+  if (dbError) return errorResponse(dbError.message, 500);
+
+  const dbProUserIds = new Set<string>((dbSubs || []).map((r: any) => r.user_id));
+  const inStripeNotInDb = [...stripeActiveUserIds].filter((id) => !dbProUserIds.has(id));
+  const inDbNotInStripe = (dbSubs || []).filter((row: any) => !stripeActiveUserIds.has(row.user_id));
+
+  const userIdsForLookup = Array.from(
+    new Set([...inStripeNotInDb, ...inDbNotInStripe.map((r: any) => r.user_id)])
+  );
+  let profilesById: Record<string, any> = {};
+  if (userIdsForLookup.length) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id,full_name,email,country')
+      .in('id', userIdsForLookup);
+    profilesById = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
+  }
+
+  return jsonResponse({
+    summary: {
+      stripe_active_subscriptions: stripeActiveCount,
+      stripe_active_users_mapped: stripeActiveUserIds.size,
+      db_pro_users: dbProUserIds.size,
+      in_stripe_not_in_db_count: inStripeNotInDb.length,
+      in_db_not_in_stripe_count: inDbNotInStripe.length,
+      unmatched_stripe_active_count: unmatchedStripeActive.length,
+    },
+    issues: {
+      in_stripe_not_in_db: inStripeNotInDb.slice(0, sampleLimit).map((userId) => ({
+        user_id: userId,
+        profile: profilesById[userId] || null,
+      })),
+      in_db_not_in_stripe: inDbNotInStripe.slice(0, sampleLimit).map((row: any) => ({
+        ...row,
+        profile: profilesById[row.user_id] || null,
+      })),
+      unmatched_stripe_active: unmatchedStripeActive,
+    },
+  });
+}
+
 // ============================================================
 // Router
 // ============================================================
@@ -785,6 +961,14 @@ Deno.serve(async (req) => {
     // --- ASSESSMENTS ---
     if (path === 'assessments' && method === 'GET') {
       return getAssessments(url);
+    }
+
+    // --- SUBSCRIPTIONS ---
+    if (path === 'subscriptions/subscribed-users' && method === 'GET') {
+      return getSubscribedUsers(url);
+    }
+    if (path === 'subscriptions/issues' && method === 'GET') {
+      return getSubscriptionIssues(url);
     }
 
     return errorResponse(`Route not found: ${method} /${path}`, 404);
