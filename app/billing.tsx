@@ -254,9 +254,25 @@ export default function BillingScreen() {
             <TouchableOpacity
               style={styles.restoreButton}
               onPress={async () => {
-                setLoading(true);
-                await refresh();
-                setLoading(false);
+                try {
+                  setLoading(true);
+                  const {
+                    data: { session },
+                  } = await supabase.auth.getSession();
+                  if (session) {
+                    await fetch(`${supabaseUrl}/functions/v1/sync-subscription`, {
+                      method: 'POST',
+                      headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        apikey: supabaseAnonKey,
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                  }
+                  await refresh();
+                } finally {
+                  setLoading(false);
+                }
               }}
               disabled={loading}
             >

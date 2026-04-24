@@ -81,8 +81,8 @@ Deno.serve(async (req) => {
         if (session.mode !== 'subscription') break;
 
         const userId = await resolveUserId(
-          session.metadata?.user_id,
-          session.metadata?.supabase_user_id,
+          session.metadata?.user_id || session.metadata?.userId || session.metadata?.uid,
+          session.metadata?.supabase_user_id || session.metadata?.supabaseUserId,
           session.customer as string | null
         );
 
@@ -127,7 +127,12 @@ Deno.serve(async (req) => {
 
         // Try to find user by metadata first (both field name variants), then
         // fall back to the existing stripe_subscription_id row.
-        const userId = subscription.metadata?.user_id || subscription.metadata?.supabase_user_id;
+        const userId =
+          subscription.metadata?.user_id ||
+          subscription.metadata?.userId ||
+          subscription.metadata?.uid ||
+          subscription.metadata?.supabase_user_id ||
+          subscription.metadata?.supabaseUserId;
 
         if (userId) {
           await supabase
